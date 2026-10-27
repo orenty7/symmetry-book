@@ -1,0 +1,6 @@
+name: Symmetry
+include: src
+depend: cubical
+flags:
+  --cubical
+  --guardedness
