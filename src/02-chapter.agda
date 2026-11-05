@@ -209,3 +209,75 @@ apap=ap : ∀ {X : Set} {Y : X → Set} {Z : Set}
   (p : y ≡ y') →
   apap g (refl x) p ≡ ap (g x) p
 apap=ap g {x} (refl y) = refl (refl (g x y))
+
+-- Chapter 2.8 Sum types
+data Σ (X : Set) (Y : X → Set) : Set where
+  pair : (x : X) → (y : Y x) → Σ X Y
+
+fst : ∀ {X} {Y} → Σ X Y → X
+fst (pair x y) = x
+
+snd : ∀ {X} {Y} → (s : Σ X Y) → Y (fst s)
+snd (pair x y) = y
+
+triple-assoc-1 : ∀{X : Set}{Y : X → Set}{Z : Σ X Y → Set} →
+  Σ X (λ x → Σ (Y x) (λ y → Z (pair x y))) →
+  Σ (Σ X Y) Z
+triple-assoc-1 (pair x (pair y z)) = pair (pair x y) z
+
+triple-assoc-2 : ∀{X : Set}{Y : X → Set}{Z : Σ X Y → Set} →
+  Σ (Σ X Y) Z →
+  Σ X (λ x → Σ (Y x) (λ y → Z (pair x y)))
+triple-assoc-2 (pair (pair x y) z) = pair x (pair y z)
+
+-- Chapter 2.9 Equivalences
+isContr : Set → Set
+isContr X = Σ X (λ c → ∀ x → c ≡ x)
+
+center : ∀ {X} → isContr X → X
+center = fst
+
+contr : ∀ {X} → (is-contr : isContr X) → (x : X) → center is-contr ≡ x
+contr = snd
+
+contractible-is-connected :
+  {X : Set} →
+  isContr X →
+  (x y : X) →
+  x ≡ y
+contractible-is-connected is-contr x y =
+  trans
+    (symm (contr is-contr x))
+    (contr is-contr y)
+
+any-center : ∀{X : Set} →
+  isContr X →
+  (new-center : X) →
+  Σ (isContr X) (λ is-contr → center is-contr ≡ new-center)
+any-center {X} is-contr new-center = pair new-contr (refl new-center) where
+  path-to-new-center : (x : X) → new-center ≡ x
+  path-to-new-center x = contractible-is-connected is-contr new-center x
+
+  new-contr : isContr X
+  new-contr = pair new-center path-to-new-center
+
+
+singleton : {X : Set} (a : X) → Set
+singleton {X} a = Σ X (λ x → a ≡ x)
+
+singleton-contractible : ∀ {X} (a : X) → isContr (singleton a)
+singleton-contractible a = pair cetr cotr where
+  cetr : singleton a
+  cetr = pair a (refl a)
+
+  cotr : (c' : singleton a) → cetr ≡ c'
+  cotr (pair a (refl a)) = refl cetr
+
+_⁻¹  : {X Y : Set} → (f : X → Y) → Y → Set
+(f ⁻¹) y = Σ _ (λ x → y ≡ (f x))
+
+isEquiv : {X Y : Set} → (f : X → Y) → Set
+isEquiv f = ∀ y → isContr ((f ⁻¹) y)
+
+_≅_ : (X Y : Set) → Set
+X ≅ Y = Σ (X → Y) isEquiv
